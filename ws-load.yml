@@ -1,0 +1,58 @@
+config:
+  target: "wss://ws.example.com"
+  engines:
+    socketio-v3: {}
+  phases:
+    - name: "Ramp to 1k clients"
+      duration: 60
+      arrivalRate: 5
+      rampTo: 17
+    - name: "Hold at 1k"
+      duration: 120
+      arrivalRate: 17
+    - name: "Ramp to 5k clients"
+      duration: 120
+      arrivalRate: 17
+      rampTo: 42
+    - name: "Sustain 5k for 5 minutes"
+      duration: 300
+      arrivalRate: 42
+  socketio:
+    transports: ["websocket"]
+    reconnection: false
+  ensure:
+    p95: 200
+    maxErrorRate: 1
+
+scenarios:
+  - name: "Heartbeat + broadcast"
+    engine: socketio-v3
+    weight: 80
+    flow:
+      - emit:
+          channel: "join"
+          data:
+            room: "room-{{ $randomNumber(1, 50) }}"
+            tenant: "tenant-{{ $randomNumber(1, 10) }}"
+      - loop:
+          - think: 10
+          - emit:
+              channel: "heartbeat"
+              data: { ts: "{{ $timestamp() }}" }
+        count: 30
+
+  - name: "Chatty client"
+    engine: socketio-v3
+    weight: 20
+    flow:
+      - emit:
+          channel: "join"
+          data: { room: "room-1" }
+      - loop:
+          - think: 3
+          - emit:
+              channel: "chat:message"
+              data:
+                room: "room-1"
+                body: "load-test message {{ $randomString() }}"
+        count: 60

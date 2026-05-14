@@ -1,0 +1,35 @@
+name: Artillery WebSocket load
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "WebSocket target URL"
+        required: true
+        default: "wss://staging.example.com"
+  schedule:
+    - cron: "0 3 * * 0"  # Sunday 03:00 — weekly load test
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Run Artillery
+        run: |
+          TARGET="${{ github.event.inputs.target || 'wss://staging.example.com' }}"
+          npx artillery run --target "$TARGET" --output report.json ws-load.yml
+      - name: Generate HTML report
+        if: always()
+        run: npx artillery report --output report.html report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: artillery-report
+          path: |
+            report.json
+            report.html
+          retention-days: 14

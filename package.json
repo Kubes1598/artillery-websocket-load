@@ -1,0 +1,15 @@
+{
+  "name": "artillery-websocket-load",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Artillery scenario stressing Socket.IO at 5k concurrent connections, with realistic message volume.",
+  "scripts": {
+    "load": "artillery run ws-load.yml",
+    "report": "artillery report"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.0",
+    "artillery-engine-socketio-v3": "^1.0.0"
+  },
+  "license": "MIT"
+}
